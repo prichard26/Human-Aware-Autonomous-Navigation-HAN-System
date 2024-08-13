@@ -346,3 +346,33 @@ def get_image_size(img_path):
         raise FileNotFoundError(f"Image not found at {img_path}")
     height, width, _ = image.shape
     return image, (width, height)
+
+
+def create_hardcoded_obstacle(initial_position, direction, speed, time_steps=100, dt=10):
+    """
+    Creates a hardcoded obstacle's future positions based on an initial position, direction, and speed.
+
+    Args:
+    - initial_position (tuple of int): The initial position of the obstacle (x, y) in the coordinate space (-640, 640), (0, 1000).
+    - direction (float): The direction of the obstacle's movement in radians.
+    - speed (float): The speed of the obstacle in centimeters per second.
+    - time_steps (int, optional): The number of time steps to simulate. Default is 100.
+    - dt (int, optional): The time increment (in milliseconds) between each time step. Default is 10 ms.
+
+    Returns:
+    - obstacle (tuple): A tuple where each tuple contains:
+      - coordinates (numpy array of shape (time_steps, 2)): A 2D array with the future coordinates of the obstacle for each time step.
+      - direction (float): The direction of the obstacle's movement in radians.
+      - speed (float): The speed of the obstacle in centimeters per second.
+    """
+    initial_coordinates = np.array(initial_position, dtype=int)
+    future_coordinates = np.zeros((time_steps, 2), dtype=int)  # 2D array to store future positions as integers
+
+    for t in range(time_steps):
+        futur_x = int(initial_coordinates[0] + np.cos(direction) * speed * t * dt)
+        futur_y = int(initial_coordinates[1] + np.sin(direction) * speed * t * dt)
+        future_coordinates[t] = [futur_x, futur_y]
+
+    # Return the obstacle as a tuple with its future positions, direction, and speed
+    obstacle = (future_coordinates, direction, speed)
+    return obstacle

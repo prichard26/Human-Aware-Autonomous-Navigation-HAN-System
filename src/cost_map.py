@@ -2,35 +2,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-def create_time_dependent_cost_map(depths, horizontal_pos, directions, speeds, time_steps=100, dt=10):
+def create_dynamic_obstacles(depths, horizontal_pos, directions, speeds, time_steps=100, dt=10):
     """
-    Creates a time-dependent 3D cost map based on the detected positions, directions, and speeds of obstacles.
+    Creates dynamic obstacles and calculates their future coordinates based on initial positions, directions, and speeds.
 
     Args:
     - depths (list of float): List of depths (in meters) for each obstacle detected.
     - horizontal_pos (list of float): List of horizontal positions (in centimeters) for each obstacle.
     - directions (list of float): List of directions (in radians) for each obstacle's movement.
     - speeds (list of float): List of speeds (in centimeters per second) for each obstacle.
-    - time_steps (int, optional): The number of time steps to simulate. Default is 400.
-    - dt (int, optional): The time increment (in milliseconds) between each time step. Default is 5 ms.
+    - time_steps (int, optional): The number of time steps to simulate. Default is 100.
+    - dt (int, optional): The time increment (in milliseconds) between each time step. Default is 10 ms.
 
     Returns:
-    - cost_map (numpy array): A 3D numpy array of shape (1280, 1000, time_steps) representing the probability of an obstacle being present at each cell over time.
     - dynamic_obstacles (list of tuples): A list of tuples where each tuple contains:
       - coordinates (numpy array of shape (time_steps, 2)): A 2D array with the future coordinates of the obstacle for each time step.
       - direction (float): The direction of the obstacle's movement in radians.
       - speed (float): The speed of the obstacle in centimeters per second.
     """
-    grid_size = (1280, 1000)
-    cost_map = np.zeros((grid_size[0], grid_size[1], time_steps))  # 3D cost map: (x, y, time)
     dynamic_obstacles = []
-
-    # Coordinate conversion functions
-    def x_to_grid(x):
-        return int(x + 640)  # Convert x from [-640, 640] to [0, 1280]
-    
-    def y_to_grid(y):
-        return int(y)  # y already in [0, 1000]
 
     for depth, horizontal, direction, speed in zip(depths, horizontal_pos, directions, speeds):
         if direction is not None and depth is not None and horizontal is not None and speed is not None:
@@ -42,24 +32,54 @@ def create_time_dependent_cost_map(depths, horizontal_pos, directions, speeds, t
                 futur_y = int(initial_coordinates[1] + np.sin(direction) * speed * t * dt)
                 future_coordinates[t] = [futur_x, futur_y]
 
-                # Convert future coordinates to grid indices
-                grid_x = x_to_grid(futur_x)
-                grid_y = y_to_grid(futur_y)
-
-                # Ensure future coordinates are within the grid bounds
-                if 0 <= grid_x < grid_size[0] and 0 <= grid_y < grid_size[1]:
-                    radius = 25  # Static influence radius around the obstacle
-                    for i in range(max(0, grid_x - radius), min(grid_size[0], grid_x + radius)):
-                        for j in range(max(0, grid_y - radius), min(grid_size[1], grid_y + radius)):
-                            distance_to_center = np.sqrt((i - grid_x) ** 2 + (j - grid_y) ** 2)
-                            if distance_to_center <= radius:
-                                influence = 1 - (distance_to_center / radius)
-                                cost_map[i, j, t] = max(cost_map[i, j, t], influence)
-
             # Store the obstacle's future positions along with its direction and speed
             dynamic_obstacles.append((future_coordinates, direction, speed))
 
-    return cost_map, dynamic_obstacles
+    return dynamic_obstacles
+
+def create_time_dependent_cost_map(dynamic_obstacles, time_steps=100):
+    """
+    Creates a time-dependent 3D cost map based on the future positions of obstacles.
+
+    Args:
+    - dynamic_obstacles (list of tuples): A list of obstacles where each tuple contains:
+      - coordinates (numpy array of shape (time_steps, 2)): A 2D array with the future coordinates of the obstacle for each time step.
+      - direction (float): The direction of the obstacle's movement in radians.
+      - speed (float): The speed of the obstacle in centimeters per second.
+    - time_steps (int, optional): The number of time steps to simulate. Default is 100.
+
+    Returns:
+    - cost_map (numpy array): A 3D numpy array of shape (1280, 1000, time_steps) representing the probability of an obstacle being present at each cell over time.
+    """
+    grid_size = (1280, 1000)
+    cost_map = np.zeros((grid_size[0], grid_size[1], time_steps))  # 3D cost map: (x, y, time)
+
+    # Coordinate conversion functions
+    def x_to_grid(x):
+        return int(x + 640)  # Convert x from [-640, 640] to [0, 1280]
+    
+    def y_to_grid(y):
+        return int(y)  # y already in [0, 1000]
+
+    for coordinates, direction, speed in dynamic_obstacles:
+        for t in range(time_steps):
+            futur_x, futur_y = coordinates[t]
+
+            # Convert future coordinates to grid indices
+            grid_x = x_to_grid(futur_x)
+            grid_y = y_to_grid(futur_y)
+
+            # Ensure future coordinates are within the grid bounds
+            if 0 <= grid_x < grid_size[0] and 0 <= grid_y < grid_size[1]:
+                radius = 25  # Static influence radius around the obstacle
+                for i in range(max(0, grid_x - radius), min(grid_size[0], grid_x + radius)):
+                    for j in range(max(0, grid_y - radius), min(grid_size[1], grid_y + radius)):
+                        distance_to_center = np.sqrt((i - grid_x) ** 2 + (j - grid_y) ** 2)
+                        if distance_to_center <= radius:
+                            influence = 1 - (distance_to_center / radius)
+                            cost_map[i, j, t] = max(cost_map[i, j, t], influence)
+
+    return cost_map
 
 
 def plot_all_time_dependent_cost_maps(cost_map, dynamic_obstacles, time_steps=100, plots_per_figure=9, dt=10):
