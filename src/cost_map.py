@@ -132,81 +132,129 @@ def create_time_dependent_cost_map(depths, horizontal_pos, directions, speeds, t
 
     return cost_map, dynamic_obstacles
 
-def plot_all_time_dependent_cost_maps(cost_map, dynamic_obstacles, time_steps=400):
+
+def plot_all_time_dependent_cost_maps(cost_map, dynamic_obstacles, depths, horizontal_pos, directions, speeds, time_steps=400, plots_per_figure=9, dt=5):
     """
-    Plots all the time-dependent cost maps with 3 plots per row.
+    Plots all the time-dependent cost maps with a limit on plots per figure.
 
     Args:
     - cost_map (numpy array): 3D cost map array.
     - dynamic_obstacles (list of tuples): List of dynamic obstacles.
+    - depths (list): List of initial depths of the obstacles.
+    - horizontal_pos (list): List of initial horizontal positions of the obstacles.
+    - directions (list): List of directions for each obstacle.
+    - speeds (list): List of speeds for each obstacle.
     - time_steps (int): The number of time steps to plot.
+    - plots_per_figure (int): Number of plots per figure.
+    - dt (int): Time interval between steps (in milliseconds).
 
     Returns:
     - None
     """
-    # Determine the number of rows needed
-    num_rows = (time_steps + 2) // 3  # Calculate the number of rows needed for 3 plots per row
-
-    plt.figure(figsize=(15, 5 * num_rows))  # Adjust the figure size according to the number of rows
-
-    for t in range(time_steps):
-        plt.subplot(num_rows, 3, t + 1)  # Create a subplot for each time step
-        
-        # Plot the cost map at the given time step
-        plt.imshow(cost_map[:, :, t].T, cmap='hot', origin='lower', extent=[-680, 680, 0, 1000])
-        
-        # Plot the obstacles and their directions
-        for obstacle in dynamic_obstacles:
-            (x, y), direction, speed = obstacle
-            cos_dir = np.cos(direction)
-            sin_dir = np.sin(direction)
-            plt.arrow(x, y, cos_dir * 50, sin_dir * 50, head_width=20, head_length=30, fc='blue', ec='blue')
-        
-        plt.colorbar(label='Obstacle Influence')
-        plt.title(f'Time step {t * 5} ms')
-        plt.xlabel('Horizontal Position (cm)')
-        plt.ylabel('Depth (cm)')
-        plt.grid(False)
+    grid_size = (1280, 1000)
     
-    plt.tight_layout()  # Adjust subplots to fit into the figure area
-    plt.show()
+    # Coordinate conversion functions
+    def x_to_grid(x):
+        return int(x + 680)  # Convert x from [-680, 680] to [0, 1280]
+    
+    def y_to_grid(y):
+        return int(y)  # y already in [0, 1000]
 
+    num_figures = (time_steps + plots_per_figure - 1) // plots_per_figure  # Calculate the number of figures needed
 
-def animate_cost_map(cost_map, dynamic_obstacles, time_steps=400, interval=100):
+    for f in range(num_figures):
+        plt.figure(figsize=(15, 5 * (plots_per_figure // 3)))
+        for i in range(plots_per_figure):
+            t = f * plots_per_figure + i
+            if t >= time_steps:
+                break
+            plt.subplot(3, 3, i + 1)  # Create a subplot (3 rows by 3 columns)
+            plt.imshow(cost_map[:, :, t].T, cmap='hot', origin='lower', extent=[-680, 680, 0, 1000])
+            
+            # Plot the obstacles and their directions
+            for depth, horizontal, direction, speed in zip(depths, horizontal_pos, directions, speeds):
+                futur_x = horizontal + np.cos(direction) * speed * t * dt
+                futur_y = depth * 100 + np.sin(direction) * speed * t * dt 
+                
+                # Convert future coordinates to grid indices
+                grid_x = x_to_grid(futur_x)
+                grid_y = y_to_grid(futur_y)
+
+                # Ensure the arrow is within bounds
+                if 0 <= grid_x < grid_size[0] and 0 <= grid_y < grid_size[1]:
+                    cos_dir = np.cos(direction)
+                    sin_dir = np.sin(direction)
+                    plt.arrow(grid_x - 680, grid_y, cos_dir * 50, sin_dir * 50, head_width=20, head_length=30, fc='blue', ec='blue')
+            
+            plt.title(f'Time step {t * dt} ms')
+            plt.xlabel('Horizontal Position (cm)')
+            plt.ylabel('Depth (cm)')
+            plt.grid(False)
+        
+        plt.tight_layout()
+        plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from IPython.display import HTML
+
+def animate_cost_map(cost_map, dynamic_obstacles, depths, horizontal_pos, directions, speeds, time_steps=400, dt=5, interval=100):
     """
     Creates an animation showing the evolution of the cost map over time.
 
     Args:
     - cost_map (numpy array): 3D cost map array.
     - dynamic_obstacles (list of tuples): List of dynamic obstacles.
+    - depths (list): List of initial depths of the obstacles.
+    - horizontal_pos (list): List of initial horizontal positions of the obstacles.
+    - directions (list): List of directions for each obstacle.
+    - speeds (list): List of speeds for each obstacle.
     - time_steps (int): The number of time steps to animate.
-    - interval (int): Time delay between frames in milliseconds.
+    - dt (int): Time interval between steps (in milliseconds).
+    - interval (int): Delay between frames in milliseconds.
 
     Returns:
     - anim (FuncAnimation): The animation object.
     """
     fig, ax = plt.subplots(figsize=(12.8, 10))
+
+    grid_size = (1280, 1000)
     
+    def x_to_grid(x):
+        return int(x + 680)  # Convert x from [-680, 680] to [0, 1280]
+    
+    def y_to_grid(y):
+        return int(y)  # y already in [0, 1000]
+
     def update(t):
         ax.clear()
-        # Plot the cost map at the given time step
         ax.imshow(cost_map[:, :, t].T, cmap='hot', origin='lower', extent=[-680, 680, 0, 1000])
         
         # Plot the obstacles and their directions
-        for obstacle in dynamic_obstacles:
-            (x, y), direction, speed = obstacle
-            cos_dir = np.cos(direction)
-            sin_dir = np.sin(direction)
-            ax.arrow(x, y, cos_dir * 50, sin_dir * 50, head_width=20, head_length=30, fc='blue', ec='blue')
+        for depth, horizontal, direction, speed in zip(depths, horizontal_pos, directions, speeds):
+            futur_x = horizontal + np.cos(direction) * speed * t * dt
+            futur_y = depth * 100 + np.sin(direction) * speed * t * dt
+            
+            # Convert future coordinates to grid indices
+            grid_x = x_to_grid(futur_x)
+            grid_y = y_to_grid(futur_y)
+
+            # Ensure the arrow is within bounds
+            if 0 <= grid_x < grid_size[0] and 0 <= grid_y < grid_size[1]:
+                cos_dir = np.cos(direction)
+                sin_dir = np.sin(direction)
+                ax.arrow(grid_x - 680, grid_y, cos_dir * 50, sin_dir * 50, head_width=20, head_length=30, fc='blue', ec='blue')
         
-        ax.set_title(f'Time step {t * 5} ms')
+        ax.set_title(f'Time step {t * dt} ms')
         ax.set_xlabel('Horizontal Position (cm)')
         ax.set_ylabel('Depth (cm)')
         ax.grid(False)
         ax.set_xlim([-680, 680])
         ax.set_ylim([0, 1000])
-        plt.colorbar(ax.imshow(cost_map[:, :, t].T, cmap='hot', origin='lower', extent=[-680, 680, 0, 1000]), ax=ax, label='Obstacle Influence')
 
     anim = FuncAnimation(fig, update, frames=time_steps, interval=interval)
-    plt.show()
+    
+    # Display the animation in the notebook
     return anim
+
