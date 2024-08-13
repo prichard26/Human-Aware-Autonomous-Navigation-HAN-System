@@ -19,6 +19,8 @@ keypoint_indices = {
     'left_knee': 13, 'right_knee': 14, 'left_ankle': 15, 'right_ankle': 16
 }
 
+import numpy as np
+
 def calculate_keypoint_direction(keypoint_coords):
     """
     Calculates the direction based on keypoint coordinates.
@@ -31,33 +33,48 @@ def calculate_keypoint_direction(keypoint_coords):
     """
     vectors = []
 
-    if 'left_hip' in keypoint_coords and 'right_hip' in keypoint_coords:
-        left_hip = keypoint_coords['left_hip']
-        right_hip = keypoint_coords['right_hip']
-        hip_vector = np.array(right_hip) - np.array(left_hip)
-        vectors.append(hip_vector)
-
-    if 'left_shoulder' in keypoint_coords and 'right_shoulder' in keypoint_coords:
-        left_shoulder = keypoint_coords['left_shoulder']
-        right_shoulder = keypoint_coords['right_shoulder']
-        shoulder_vector = np.array(right_shoulder) - np.array(left_shoulder)
-        vectors.append(shoulder_vector)
-
-    if 'left_eye' in keypoint_coords and 'right_eye' in keypoint_coords:
+    # Prioritize head keypoints for direction calculation
+    head_keypoints = ['left_eye', 'right_eye', 'nose']
+    if all(k in keypoint_coords for k in head_keypoints):
         left_eye = keypoint_coords['left_eye']
         right_eye = keypoint_coords['right_eye']
-        eye_vector = np.array(right_eye) - np.array(left_eye)
-        vectors.append(eye_vector)
+        nose = keypoint_coords['nose']
 
+        # Vector between left and right eyes
+        eye_vector = np.array(right_eye) - np.array(left_eye)
+        # Vector from the midpoint of the eyes to the nose
+        nose_to_eye_vector = np.array(nose) - np.array((np.array(left_eye) + np.array(right_eye)) / 2)
+        
+        vectors.append(eye_vector)
+        vectors.append(nose_to_eye_vector)
+    else:
+        # Fallback to body keypoints if head keypoints are not available
+        if 'left_hip' in keypoint_coords and 'right_hip' in keypoint_coords:
+            left_hip = keypoint_coords['left_hip']
+            right_hip = keypoint_coords['right_hip']
+            hip_vector = np.array(right_hip) - np.array(left_hip)
+            vectors.append(hip_vector)
+
+        if 'left_shoulder' in keypoint_coords and 'right_shoulder' in keypoint_coords:
+            left_shoulder = keypoint_coords['left_shoulder']
+            right_shoulder = keypoint_coords['right_shoulder']
+            shoulder_vector = np.array(right_shoulder) - np.array(left_shoulder)
+            vectors.append(shoulder_vector)
+
+        if 'left_eye' in keypoint_coords and 'right_eye' in keypoint_coords:
+            left_eye = keypoint_coords['left_eye']
+            right_eye = keypoint_coords['right_eye']
+            eye_vector = np.array(right_eye) - np.array(left_eye)
+            vectors.append(eye_vector)
+
+    # Calculate mean vector and determine angle
     if vectors:
         mean_vector = np.mean(vectors, axis=0)
-        angle = np.arctan2(mean_vector[1], mean_vector[0]) 
+        angle = np.arctan2(mean_vector[1], mean_vector[0])
 
         # Ensure angle is within the range [0, 2*pi]
         if angle < 0:
             angle += 2 * np.pi
-
-        angle = np.pi -(np.pi - angle)
 
         return angle
 
