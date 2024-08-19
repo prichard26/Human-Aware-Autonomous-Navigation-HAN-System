@@ -35,7 +35,7 @@ def modified_cost(current, neighbor, prob_grid):
     """
     base_cost = heuristic(current, neighbor)
     prob_cost = prob_grid[neighbor[0], neighbor[1]]
-    return base_cost + 1000 * prob_cost
+    return base_cost + 50 * prob_cost
 
 def calculate_cost_map(dynamic_obstacles_pos, grid_size=(1280, 1000)):
     """
@@ -152,7 +152,7 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
         
         close_set.add(current)
         for i, j in neighbors:
-            neighbor = int(current[0] + i), int(current[1] + j)  # Ensure neighbor is an integer tuple
+            neighbor = current[0] + i, current[1] + j
             if 0 <= neighbor[0] < prob_grid.shape[0] and 0 <= neighbor[1] < prob_grid.shape[1]:
                 tentative_g_score = gscore[current] + modified_cost(current, neighbor, prob_grid)
                 if neighbor in close_set and tentative_g_score >= gscore.get(neighbor, float('inf')):
@@ -168,7 +168,7 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
 
     return None
 
-def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal, robot_speed, time_steps, dt):
+def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal, robot_speed, time_steps=100, dt=10):
     """
     Simulate the robot's movement while avoiding dynamic obstacles.
 
@@ -177,7 +177,7 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
     - dynamic_obstalcles_dir_speed (list of tuples): List containing the direction and speed of each obstacle.
     - start (tuple): Starting position of the robot (x, y).
     - goal (tuple): Goal position (x, y).
-    - robot_speed (float): Speed of the robot in meters per second.
+    - robot_speed (float): Speed of the robot.
     - time_steps (int): Number of time steps for the simulation.
     - dt (int): Time increment between steps in milliseconds.
 
@@ -215,36 +215,32 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
             break
         path_times.append(path)
 
-        print('PATH :', path)
+        print('PARTH :', path)
 
-        # Déplacer le robot le plus loin possible en une seule itération
-        remaining_distance = robot_speed * dt / 10  # Calculer la distance totale que le robot peut parcourir en dt
-        current_position = np.array(robot_positions[-1])
-
-        while remaining_distance > 0 and len(path) > 1:
-            next_position = np.array(path[1])  # Considérer la prochaine position dans le chemin
-            distance_to_next_position = heuristic(current_position, next_position)
+         # Move the robot along the path based on remaining distance it can cover in dt
+        remaining_distance = robot_speed * dt / 10  # robot speed in m/s, dt in ms, distance in cm 
+        for i in range(1, len(path)):
+            next_position = path[i]
+            distance_to_next_position = heuristic(robot_positions[-1], next_position)
             
             if remaining_distance >= distance_to_next_position:
-                # Déplacer complètement vers la prochaine position
-                current_position = next_position
+                # Move fully to the next position
+                robot_positions.append(tuple(np.floor(next_position).astype(int)))
                 remaining_distance -= distance_to_next_position
-                path.pop(0)  # Enlever le point du chemin une fois qu'il est atteint
             else:
-                # Déplacer partiellement vers la prochaine position
-                direction = next_position - current_position
-                direction = direction / np.linalg.norm(direction)  # Normaliser le vecteur direction
-                current_position = current_position + direction * remaining_distance
-                remaining_distance = 0  # Le robot a utilisé toute sa distance de mouvement
+                # Move partially towards the next position
+                direction = np.array(next_position) - np.array(robot_positions[-1])
+                direction = direction / np.linalg.norm(direction)  # Normalize direction vector
+                new_position = np.array(robot_positions[-1]) + direction * remaining_distance
+                robot_positions.append(tuple(np.floor(new_position).astype(int)))
+                break
 
-        # Ajouter la position finale atteinte par le robot
-        robot_positions.append(tuple(np.round(current_position).astype(int)))
-        
+
         # Check if the goal has been reached (with a small tolerance)
-        if heuristic(robot_positions[-1], goal) < 1.5:  # 1 unit tolerance
+        if heuristic(robot_positions[-1], goal) < 1:  # 1 unit tolerance
             robot_positions[-1] = goal  # Snap to the goal
             goal_reached = True
-            
+
         # Diagnostic print statements
         print(f"Step {t}:")
         print(f"  - Length of robot_positions: {len(robot_positions)}")
@@ -259,7 +255,7 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
     return robot_positions, cost_map_times, dynamic_obstacles_times, path_times
 
 
-def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynamic_obstalcles_dir_speed, goal, simulation_time, dt, path_times):
+def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynamic_obstalcles_dir_speed, goal, time_steps, dt, path_times):
     """
     Create an animation to visualize the robot's movement, dynamic obstacles, and the planned path over time.
 
@@ -269,7 +265,7 @@ def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynami
     - dynamic_obstacles_times (list of numpy arrays): List of arrays, each containing the predicted positions of dynamic obstacles at each time step.
     - dynamic_obstalcles_dir_speed (list of tuples): List of direction and speed tuples for each obstacle.
     - goal (tuple): The goal position on the map, which the robot is trying to reach.
-    - simulation_time (int): The lenght of simulation in ms.
+    - time_steps (int): The number of time steps in the simulation.
     - dt (int): Time interval in milliseconds between each simulation step.
     - path_times (list of lists): List of paths at each time step.
 
@@ -277,7 +273,7 @@ def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynami
     - FuncAnimation: A Matplotlib animation object that visualizes the robot's navigation, obstacle movements, and the path over time.
     """
     fig, ax = plt.subplots(figsize=(12.8, 10))
-    max_frames = min(len(cost_maps), len(robot_positions), len(dynamic_obstacles_times), len(path_times))
+    max_frames = min(len(cost_maps), len(robot_positions), len(dynamic_obstacles_times))
 
     def update(t):
         ax.clear()
@@ -318,11 +314,10 @@ def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynami
         ax.set_xlim([-640, 640])
         ax.set_ylim([0, 1000])
 
-    anim = FuncAnimation(fig, update, frames=max_frames, interval=dt)
+    anim = FuncAnimation(fig, update, frames=int(time_steps/dt), interval=dt)
     return anim
 
 
-# Function to create obstacles already inside the grid
 def create_internal_obstacles(num_obstacles):
     """
     Generates a set of obstacles that are initially positioned inside the grid.
@@ -331,24 +326,24 @@ def create_internal_obstacles(num_obstacles):
     - num_obstacles (int): The number of obstacles to create.
 
     Returns:
-    - dynamic_obstacles_pos (numpy array): An array of shape (num_obstacles, 1, 2) containing the initial positions of the obstacles.
+    - dynamic_obstacles_pos (numpy array): An array of shape (num_obstacles, 2) containing the initial positions of the obstacles.
       Each position is represented as [x, y] coordinates.
     - dynamic_obstalcles_dir_speed (list of tuples): A list of tuples where each tuple contains:
       - direction (float): The direction of the obstacle's movement in radians.
       - speed (float): The speed of the obstacle in centimeters per second.
-
-    The function generates random initial positions for the obstacles within the grid's boundaries.
-    It also assigns a random direction and speed to each obstacle.
     """
-    dynamic_obstacles_pos = np.zeros((num_obstacles, 2))  # No extra dimension here
+    dynamic_obstacles_pos = np.zeros((num_obstacles, 2)) # Initialize obstacle positions
     dynamic_obstalcles_dir_speed = []
-    
+
     for i in range(num_obstacles):
         initial_x = np.random.uniform(-640, 640)
         initial_y = np.random.uniform(0, 1000)
+        
+        # Direction remains the same, but speed should be 
         direction = np.random.uniform(0, 2 * np.pi)
         speed = np.random.uniform(0.5, 1.5)
         
+        # Append the position and direction-speed tuple
         dynamic_obstacles_pos[i, :] = [initial_x, initial_y]
         dynamic_obstalcles_dir_speed.append((direction, speed))
     

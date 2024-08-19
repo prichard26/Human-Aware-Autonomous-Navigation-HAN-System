@@ -1,32 +1,6 @@
-"""
-navigation_algo.py
-Contains functions for path planning and navigation in dynamic environments.
-"""
-
 import numpy as np
 import heapq
 import matplotlib.pyplot as plt
-
-def update_probability_grid(prob_grid, dynamic_obstacles, time_step):
-    """
-    Updates the probability grid based on dynamic obstacles' positions.
-
-    Args:
-    - prob_grid (numpy array): The probability grid.
-    - dynamic_obstacles (list of tuples): List of dynamic obstacles.
-    - time_step (int): The time step for prediction.
-
-    Returns:
-    - new_prob_grid (numpy array): The updated probability grid.
-    """
-    new_prob_grid = np.copy(prob_grid)
-    for obs in dynamic_obstacles:
-        x, y, dx, dy = obs
-        for step in range(1, 6):  # Predict the next 5 steps
-            new_x, new_y = x + dx * step, y + dy * step
-            if 0 <= new_x < prob_grid.shape[1] and 0 <= new_y < prob_grid.shape[0]:
-                new_prob_grid[int(new_y), int(new_x)] = min(1, new_prob_grid[int(new_y), int(new_x)] + 0.5)
-    return new_prob_grid
 
 def heuristic(a, b):
     """
@@ -54,23 +28,26 @@ def modified_cost(current, neighbor, prob_grid):
     - cost (float): The modified cost.
     """
     base_cost = heuristic(current, neighbor)
-    prob_cost = prob_grid[neighbor[0], neighbor[1]]
-    return base_cost + prob_cost
+    prob_cost = prob_grid[neighbor[1], neighbor[0]]
+    return base_cost + 5 * prob_cost
 
-def probabilistic_astar(grid, prob_grid, start, goal):
+def probabilistic_astar(cost_map, start, goal, time_step):
     """
     Probabilistic A* algorithm for path planning.
 
     Args:
-    - grid (numpy array): The grid representing the environment.
-    - prob_grid (numpy array): The probability grid.
+    - cost_map (numpy array): The 3D cost map array.
     - start (tuple): The start point.
     - goal (tuple): The goal point.
+    - time_step (int): The specific time step to use in the cost map.
 
     Returns:
     - path (list of tuples): The path from start to goal, or None if no path is found.
     """
-    neighbors = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    grid = np.zeros(cost_map[:, :, 0].shape)
+    prob_grid = cost_map[:, :, time_step]
+    
+    neighbors = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]  # 8 directions
     close_set = set()
     came_from = {}
     gscore = {start: 0}
@@ -92,9 +69,9 @@ def probabilistic_astar(grid, prob_grid, start, goal):
         close_set.add(current)
         for i, j in neighbors:
             neighbor = current[0] + i, current[1] + j
-            if 0 <= neighbor[0] < grid.shape[0]:
-                if 0 <= neighbor[1] < grid.shape[1]:
-                    if grid[neighbor[0]][neighbor[1]] == 1:
+            if 0 <= neighbor[0] < grid.shape[1]:
+                if 0 <= neighbor[1] < grid.shape[0]:
+                    if grid[neighbor[1]][neighbor[0]] == 1:
                         continue
                 else:
                     continue
@@ -113,43 +90,78 @@ def probabilistic_astar(grid, prob_grid, start, goal):
                 
     return None
 
-def display_path(grid, path, prob_grid, dynamic_obstacles, start, goal):
+def update_robot_position(path, robot_speed, dt):
     """
-    Displays the grid, path, and dynamic obstacles.
+    Updates the robot's position based on its speed.
 
     Args:
-    - grid (numpy array): The grid representing the environment.
-    - path (list of tuples): The path from start to goal.
-    - prob_grid (numpy array): The probability grid.
-    - dynamic_obstacles (list of tuples): List of dynamic obstacles.
+    - path (list of tuples): The path from the A* algorithm.
+    - robot_speed (float): The speed of the robot in centimeters per second.
+    - dt (int): The time increment in milliseconds.
+
+    Returns:
+    - new_position (tuple): The new position of the robot.
+    - remaining_path (list of tuples): The remaining path after the robot moves.
+    """
+    steps_to_move = int(robot_speed * dt)  # Convert speed to steps based on dt
+    if steps_to_move >= len(path):
+        return path[-1], []
+    else:
+        return path[steps_to_move], path[steps_to_move:]
+
+def simulate_robot_navigation(cost_map, start, goal, robot_speed, time_steps=100, dt=10):
+    """
+    Simulates the robot's navigation using A* algorithm with periodic updates.
+
+    Args:
+    - cost_map (numpy array): The 3D cost map array.
     - start (tuple): The start point.
     - goal (tuple): The goal point.
+    - robot_speed (float): The speed of the robot in centimeters per second.
+    - time_steps (int): The number of time steps to simulate.
+    - dt (int): The time increment in milliseconds.
+
+    Returns:
+    - path (list of tuples): The final path taken by the robot.
     """
-    fig, ax = plt.subplots(figsize=(8, 12.8))
-    ax.imshow(grid, cmap=plt.cm.binary, origin='lower')
+    current_position = start
+    final_path = []
+
+    for t in range(0, time_steps):
+        path = probabilistic_astar(cost_map, current_position, goal, t)
+        if path is None:
+            print("No path found!")
+            break
+
+        current_position, remaining_path = update_robot_position(path, robot_speed, dt)
+        final_path.extend(remaining_path)
+        
+        if current_position == goal:
+            print("Goal reached!")
+            break
     
-    # Display dynamic obstacles
-    for obs in dynamic_obstacles:
-        x, y, dx, dy = obs
-        for step in range(1, 6):  # Predict the next 5 steps
-            new_x, new_y = x + dx * step, y + dy * step
-            if 0 <= new_x < grid.shape[0] and 0 <= new_y < grid.shape[1]:
-                ax.plot(new_x, new_y, marker='x', color='blue', markersize=5)
+    return final_path
+
+def display_simulation(final_path, cost_map, goal):
+    """
+    Displays the final path taken by the robot.
+
+    Args:
+    - final_path (list of tuples): The final path taken by the robot.
+    - cost_map (numpy array): The 3D cost map array.
+    - goal (tuple): The goal point.
+    """
+    plt.figure(figsize=(12.8, 10))
+    plt.imshow(cost_map[:, :, 0].T, cmap='hot', origin='lower', extent=[-640, 640, 0, 1000])
     
-    # Display path
-    if path:
-        for (i, j) in path:
-            ax.plot(i, j, marker='o', color='red', markersize=5)
+    for point in final_path:
+        plt.plot(point[0], point[1], marker='o', color='green', markersize=5)
     
-    # Display start and goal positions
-    ax.plot(start[0], start[1], marker='o', color='green', markersize=10, label='Start')
-    ax.plot(goal[0], goal[1], marker='o', color='magenta', markersize=10, label='Goal')
-    
-    plt.legend()
-    plt.xlim(0, grid.shape[0])
-    plt.ylim(0, grid.shape[1])
-    plt.xlabel('Horizontal position (scaled)')
-    plt.ylabel('Depth (scaled)')
-    plt.title('2D Top View with Path and Dynamic Obstacles')
-    plt.grid(True)
+    plt.plot(goal[0], goal[1], marker='x', color='magenta', markersize=15, mew=3)
+    plt.title('Final Path Taken by the Robot')
+    plt.xlabel('Horizontal Position (cm)')
+    plt.ylabel('Depth (cm)')
+    plt.grid(False)
+    plt.xlim([-640, 640])
+    plt.ylim([0, 1000])
     plt.show()

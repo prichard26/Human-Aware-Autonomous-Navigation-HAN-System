@@ -376,3 +376,80 @@ def create_hardcoded_obstacle(initial_position, direction, speed, time_steps=100
     # Return the obstacle as a tuple with its future positions, direction, and speed
     obstacle = (future_coordinates, direction, speed)
     return obstacle
+
+import numpy as np
+
+# Function to create obstacles already inside the grid
+def create_internal_obstacles(num_obstacles):
+    dynamic_obstacles_pos = np.zeros((num_obstacles, 2))  # No extra dimension here
+    dynamic_obstalcles_dir_speed = []
+    
+    for i in range(num_obstacles):
+        initial_x = np.random.uniform(-640, 640)
+        initial_y = np.random.uniform(0, 1000)
+        direction = np.random.uniform(0, 2 * np.pi)
+        speed = np.random.uniform(0.5, 1.5)
+        
+        dynamic_obstacles_pos[i, :] = [initial_x, initial_y]
+        dynamic_obstalcles_dir_speed.append((direction, speed))
+    
+    return dynamic_obstacles_pos, dynamic_obstalcles_dir_speed
+
+
+def create_entry_obstacles(num_obstacles, grid_size, entry_speed, time_steps=100, dt=10, max_delay=100):
+    """
+    Creates obstacles that enter the grid from the edges over time with staggered start times.
+
+    Args:
+    - num_obstacles (int): Number of obstacles to create.
+    - grid_size (tuple): Size of the grid (width, height).
+    - entry_speed (float): Speed of the obstacles entering the grid (cm/s).
+    - time_steps (int, optional): Number of time steps for the simulation. Default is 100.
+    - dt (int, optional): Time increment between steps in milliseconds. Default is 10 ms.
+    - max_delay (int, optional): Maximum delay (in time steps) before the obstacle starts entering the grid.
+
+    Returns:
+    - dynamic_obstacles (list of tuples): List of obstacles with their positions and movements.
+    """
+    
+    for _ in range(num_obstacles):
+        # Randomly choose an entry side: 0=left, 1=right, 2=top, 3=bottom
+        side = np.random.choice([0, 1, 2, 3])
+        if side == 0:  # Left edge
+            initial_x = -650  # Just outside the grid
+            initial_y = np.random.uniform(0, grid_size[1])  # Random y position
+            direction = np.random.uniform(-np.pi / 4, np.pi / 4)  # Moving right
+        elif side == 1:  # Right edge
+            initial_x = 650  # Just outside the grid
+            initial_y = np.random.uniform(0, grid_size[1])  # Random y position
+            direction = np.random.uniform(3 * np.pi / 4, 5 * np.pi / 4)  # Moving left
+        elif side == 2:  # Top edge
+            initial_x = np.random.uniform(-640, 640)  # Random x position
+            initial_y = 1050  # Just outside the grid
+            direction = np.random.uniform(-3 * np.pi / 4, -np.pi / 4)  # Moving down
+        else:  # Bottom edge
+            initial_x = np.random.uniform(-640, 640)  # Random x position
+            initial_y = -50  # Just outside the grid
+            direction = np.random.uniform(np.pi / 4, 3 * np.pi / 4)  # Moving up
+        
+        speed = entry_speed
+        initial_coordinates = np.array([int(initial_x), int(initial_y)])
+        future_coordinates = np.zeros((time_steps, 2), dtype=int)
+        
+        # Add a random delay before the obstacle starts moving
+        delay = np.random.randint(0, max_delay)
+        
+        # for t in range(time_steps):
+        #    if t < delay:
+        #        # Before the delay, the obstacle stays outside the grid
+        #        future_coordinates[t] = [initial_x, initial_y]
+        #    else:
+        #        # After the delay, the obstacle starts moving into the grid
+        #        futur_x = int(initial_coordinates[0] + np.cos(direction) * speed * (t - delay) * dt)
+        #        futur_y = int(initial_coordinates[1] + np.sin(direction) * speed * (t - delay) * dt)
+        #        future_coordinates[t] = [futur_x, futur_y]
+        
+        dynamic_obstacles = (future_coordinates, direction, speed)
+    
+    return dynamic_obstacles
+
