@@ -17,3 +17,9 @@ __pycache__/
 
 # Ignore the data directory
 data/
+
+animation.mp4
+animation2.mp4
+
+cost_map_2.py
+cost_map_3.py
