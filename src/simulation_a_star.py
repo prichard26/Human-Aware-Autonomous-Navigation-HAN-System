@@ -43,41 +43,55 @@ def modified_cost(current, neighbor, prob_grid):
     return base_cost + 1000 * prob_cost
 
 
-def calculate_cost_map(dynamic_obstacles_pos, grid_size=(1280, 1000)):
+def calculate_cost_map(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, grid_size=(1280, 1000)):
     """
-    Generate a cost map based on the positions of dynamic obstacles at a certain time.
+    Generate a cost map based on the positions and directions of dynamic obstacles at a certain time.
     
     Args:
     - dynamic_obstacles_pos (numpy array): Array containing the positions of dynamic obstacles.
+    - dynamic_obstalcles_dir_speed (list of tuples): List containing the direction and speed of each obstacle.
     - grid_size (tuple): Size of the grid (width, height).
     
     Returns:
     - numpy array: 2D array representing the current cost map.
     """
     cost_map = np.zeros(grid_size)
-
     
-    # Extract grid positions of all obstacles
+    # Convert obstacle positions to grid coordinates
     grid_coords = np.array([[x_to_grid(obst[0]), y_to_grid(obst[1])] for obst in dynamic_obstacles_pos])
 
     # Ensure all obstacle positions are within the grid boundaries
     grid_coords = np.clip(grid_coords, [0, 0], [grid_size[0] - 1, grid_size[1] - 1])
 
-    # Influence radius
-    radius = 50
-
     # Create a grid of x and y coordinates
     x_indices, y_indices = np.meshgrid(np.arange(grid_size[0]), np.arange(grid_size[1]), indexing='ij')
 
-    for grid_x, grid_y in grid_coords:
-        # Calculate the distance from each point in the grid to the obstacle
-        distance_to_center = np.sqrt((x_indices - grid_x) ** 2 + (y_indices - grid_y) ** 2)
+    for (grid_x, grid_y), (direction, speed) in zip(grid_coords, dynamic_obstalcles_dir_speed):
+ 
 
-        # Apply influence only within the radius
-        influence = np.where(distance_to_center <= radius, 1 - (distance_to_center / radius), 0)
+        # Define the size of the ellipse
+        a = 100  # Length of the ellipse in the direction of movement
+        b = 60   # Width of the ellipse perpendicular to the direction of movement
+        B = 60   # Distance to shift the center of the ellipse
 
-        # Update the cost map
-        cost_map = np.maximum(cost_map, influence)
+        # Calculate new x, y after shifting in the direction of the ellipse
+        shifted_x = grid_x + int(B * np.cos(direction))
+        shifted_y = grid_y + int(B * np.sin(direction))
+
+        for i in range(grid_size[0]):
+            for j in range(grid_size[1]):
+                # Translate grid points to the shifted ellipse's local coordinate system
+                dx = i - shifted_x
+                dy = j - shifted_y
+                dx_rot = dx * np.cos(direction) + dy * np.sin(direction)
+                dy_rot = -dx * np.sin(direction) + dy * np.cos(direction)
+                
+                # Check if the point is within the shifted ellipse
+                if (dx_rot**2 / a**2 + dy_rot**2 / b**2) <= 1:
+                    # Calculate influence based on the distance from the original coordinates
+                    distance_from_original = np.sqrt((i - grid_x) ** 2 + (j - grid_y) ** 2)
+                    influence = 1 - (distance_from_original / a)
+                    cost_map[i, j] = max(cost_map[i, j], influence)
 
     return cost_map
 
@@ -212,7 +226,7 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
     goal_reached = False
     
     # Calculate and store the initial cost map (at time step 0)
-    initial_cost_map = calculate_cost_map(dynamic_obstacles_pos)
+    initial_cost_map = calculate_cost_map(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed)
     cost_map_times.append(initial_cost_map)
 
     for t in range(steps):
@@ -225,7 +239,7 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
         dynamic_obstacles_times.append(current_dynamic_obstacles_pos)
 
         # Calculate the cost map for this time step
-        current_cost_map = calculate_cost_map(current_dynamic_obstacles_pos)
+        current_cost_map = calculate_cost_map(current_dynamic_obstacles_pos, dynamic_obstalcles_dir_speed)
         cost_map_times.append(current_cost_map)
 
         # Find the A* path
@@ -364,7 +378,7 @@ def create_internal_obstacles(num_obstacles):
     
     for i in range(num_obstacles):
         initial_x = np.random.uniform(-640, 640)
-        initial_y = np.random.uniform(0, 1000)
+        initial_y = np.random.uniform(0, 500)
         direction = np.random.uniform(0, 2 * np.pi)
         speed = np.random.uniform(0.5, 1.5)
         
