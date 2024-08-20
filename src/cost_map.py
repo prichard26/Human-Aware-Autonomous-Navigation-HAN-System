@@ -3,8 +3,13 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import heapq
 
-# Heuristic function for A* pathfinding
-def heuristic(a, b, weight=1.5):
+def x_to_grid(x):
+    return int(x + 640)  # Convert x from [-640, 640] to [0, 1280]
+
+def y_to_grid(y):
+    return int(y)  # y already in [0, 1000]
+
+def heuristic(a, b, weight=1):
     """
     Calculate the Euclidean distance between two points a and b,
     with an optional weight to make the heuristic more aggressive.
@@ -19,7 +24,7 @@ def heuristic(a, b, weight=1.5):
     """
     return weight * np.linalg.norm(np.array(a) - np.array(b))
 
-# Cost function that considers the obstacle probability
+
 def modified_cost(current, neighbor, prob_grid):
     """
     Calculate the cost of moving from the current position to a neighbor position,
@@ -37,6 +42,7 @@ def modified_cost(current, neighbor, prob_grid):
     prob_cost = prob_grid[neighbor[0], neighbor[1]]
     return base_cost + 1000 * prob_cost
 
+
 def calculate_cost_map(dynamic_obstacles_pos, grid_size=(1280, 1000)):
     """
     Generate a cost map based on the positions of dynamic obstacles at a certain time.
@@ -50,11 +56,6 @@ def calculate_cost_map(dynamic_obstacles_pos, grid_size=(1280, 1000)):
     """
     cost_map = np.zeros(grid_size)
 
-    def x_to_grid(x):
-        return int(x + 640)  # Convert x from [-640, 640] to [0, 1280]
-
-    def y_to_grid(y):
-        return int(y)  # y already in [0, 1000]
     
     # Extract grid positions of all obstacles
     grid_coords = np.array([[x_to_grid(obst[0]), y_to_grid(obst[1])] for obst in dynamic_obstacles_pos])
@@ -109,7 +110,7 @@ def update_dynamic_obstacles(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed
 
     return np.array(updated_dynamic_obstacles)
 
-# A* pathfinding algorithm
+
 def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
     """
     Find the optimal path from start to goal using a probabilistic A* algorithm.
@@ -137,7 +138,7 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
     while open_heap:
         iterations += 1
         if iterations > max_iterations:
-            print("Reached maximum iterations, aborting...")
+            #print("Reached maximum iterations, aborting...")
             return None
         
         current = heapq.heappop(open_heap)[1]
@@ -151,11 +152,29 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
             return path[::-1]
         
         close_set.add(current)
+        
+        # Get the local cost map around the current node
+        x, y = current
+        x =  x_to_grid(x)
+
+        local_map = prob_grid[max(0, x-2):x+3, max(0, y-2):y+3]
+        
+        # Only #print the local cost map if it contains non-zero values
+        #if np.any(local_map > 0):
+            #print(f"Current node: {current}, f-score: {fscore[current]}")
+            #print("Local cost map around current node:")
+            #print(local_map)
+        
         for i, j in neighbors:
             neighbor = int(current[0] + i), int(current[1] + j)  # Ensure neighbor is an integer tuple
             if 0 <= neighbor[0] < prob_grid.shape[0] and 0 <= neighbor[1] < prob_grid.shape[1]:
                 tentative_g_score = gscore[current] + modified_cost(current, neighbor, prob_grid)
+
+                # Debugging: #print neighbor evaluation details
+                #print(f"  Evaluating neighbor: {neighbor}, tentative g-score: {tentative_g_score}")
+
                 if neighbor in close_set and tentative_g_score >= gscore.get(neighbor, float('inf')):
+                    #print(f"  Ignored neighbor (in close set or worse g-score): {neighbor}")
                     continue
                     
                 if tentative_g_score < gscore.get(neighbor, float('inf')) or neighbor not in [i[1] for i in open_heap]:
@@ -163,10 +182,11 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
                     gscore[neighbor] = tentative_g_score
                     fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
                     heapq.heappush(open_heap, (fscore[neighbor], neighbor))
+                    #print(f"  Added/Updated neighbor: {neighbor}, f-score: {fscore[neighbor]}")
     
-    print('final nb of iteration :', iterations)
-
+    #print('final nb of iteration :', iterations)
     return None
+
 
 def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal, robot_speed, time_steps, dt):
     """
@@ -215,7 +235,7 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
             break
         path_times.append(path)
 
-        print('PATH :', path)
+        #print('PATH :', path)
 
         # Déplacer le robot le plus loin possible en une seule itération
         remaining_distance = robot_speed * dt / 10  # Calculer la distance totale que le robot peut parcourir en dt
@@ -245,17 +265,17 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
             robot_positions[-1] = goal  # Snap to the goal
             goal_reached = True
             
-        # Diagnostic print statements
+        # Diagnostic #print statements
         print(f"Step {t}:")
         print(f"  - Length of robot_positions: {len(robot_positions)}")
         print(f"  - Length of cost_map_times: {len(cost_map_times)}")
         print(f"  - Length of dynamic_obstacles_times: {len(dynamic_obstacles_times)}")
 
     # Final check
-    print(f"Final lengths:")
-    print(f"  - robot_positions: {len(robot_positions)}", robot_positions)
-    print(f"  - cost_map_times: {len(cost_map_times)}", cost_map_times)
-    print(f"  - dynamic_obstacles_times: {len(dynamic_obstacles_times)}", dynamic_obstacles_times)
+    #print(f"Final lengths:")
+    #print(f"  - robot_positions: {len(robot_positions)}", robot_positions)
+    #print(f"  - cost_map_times: {len(cost_map_times)}", cost_map_times)
+    #print(f"  - dynamic_obstacles_times: {len(dynamic_obstacles_times)}", dynamic_obstacles_times)
     return robot_positions, cost_map_times, dynamic_obstacles_times, path_times
 
 
@@ -284,7 +304,7 @@ def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynami
 
         # Ensure we don't exceed the available data
         if t >= max_frames:
-            print(f"Warning: Time step {t} exceeds available data. Skipping this frame.")
+            #print(f"Warning: Time step {t} exceeds available data. Skipping this frame.")
             return
 
         # Display the cost map at the current time step
@@ -322,7 +342,6 @@ def animate_cost_map(cost_maps, robot_positions, dynamic_obstacles_times, dynami
     return anim
 
 
-# Function to create obstacles already inside the grid
 def create_internal_obstacles(num_obstacles):
     """
     Generates a set of obstacles that are initially positioned inside the grid.
