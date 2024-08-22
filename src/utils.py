@@ -3,6 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import logging
+import tensorflow as tf
+
+# Dictionary of keypoint indices
+keypoint_indices = {
+    'nose': 0, 'left_eye': 1, 'right_eye': 2, 'left_ear': 3, 'right_ear': 4,
+    'left_shoulder': 5, 'right_shoulder': 6, 'left_elbow': 7, 'right_elbow': 8,
+    'left_wrist': 9, 'right_wrist': 10, 'left_hip': 11, 'right_hip': 12,
+    'left_knee': 13, 'right_knee': 14, 'left_ankle': 15, 'right_ankle': 16
+}
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -303,9 +312,9 @@ def find_closest_person(depths, coords):
     except Exception as e:
         logging.error(f"An error occurred in find_closest_person: {e}")
 
-def predict_distance(pixel_value, model_params, model_type='rational'):
+def predict_distance(pixel_value, model_params, model_type='polynomial'):
     """
-    Predicts the distance based on the pixel value using the specified model.
+    Predicts the distance based on the pixel value using the specified model in [cm].
 
     Args:
     - pixel_value (float): The pixel value to be used for prediction.
@@ -319,12 +328,12 @@ def predict_distance(pixel_value, model_params, model_type='rational'):
         if model_type == 'rational':
             return rational_func(pixel_value, *model_params)
         elif model_type == 'exponential':
-            return exponential_func(pixel_value, *model_params)
+            return exponential_func(pixel_value, *model_params)*100
         elif model_type == 'power':
-            return power_law_func(pixel_value, *model_params)
+            return power_law_func(pixel_value, *model_params)*100
         elif model_type == 'polynomial':
             poly_model = np.poly1d(model_params)
-            return poly_model(pixel_value)
+            return poly_model(pixel_value)*100
         else:
             raise ValueError("Invalid model type specified.")
     except Exception as e:
@@ -377,79 +386,142 @@ def create_hardcoded_obstacle(initial_position, direction, speed, time_steps=100
     obstacle = (future_coordinates, direction, speed)
     return obstacle
 
-import numpy as np
 
-# Function to create obstacles already inside the grid
-def create_internal_obstacles(num_obstacles):
-    dynamic_obstacles_pos = np.zeros((num_obstacles, 2))  # No extra dimension here
-    dynamic_obstalcles_dir_speed = []
-    
-    for i in range(num_obstacles):
-        initial_x = np.random.uniform(-640, 640)
-        initial_y = np.random.uniform(0, 1000)
-        direction = np.random.uniform(0, 2 * np.pi)
-        speed = np.random.uniform(0.5, 1.5)
-        
-        dynamic_obstacles_pos[i, :] = [initial_x, initial_y]
-        dynamic_obstalcles_dir_speed.append((direction, speed))
-    
-    return dynamic_obstacles_pos, dynamic_obstalcles_dir_speed
-
-
-def create_entry_obstacles(num_obstacles, grid_size, entry_speed, time_steps=100, dt=10, max_delay=100):
+def extract_and_scale_keypoints(image, posenet_model):
     """
-    Creates obstacles that enter the grid from the edges over time with staggered start times.
+    Extract keypoints using PoseNet and scale them back to the original image size.
 
     Args:
-    - num_obstacles (int): Number of obstacles to create.
-    - grid_size (tuple): Size of the grid (width, height).
-    - entry_speed (float): Speed of the obstacles entering the grid (cm/s).
-    - time_steps (int, optional): Number of time steps for the simulation. Default is 100.
-    - dt (int, optional): Time increment between steps in milliseconds. Default is 10 ms.
-    - max_delay (int, optional): Maximum delay (in time steps) before the obstacle starts entering the grid.
+    - image (numpy array): The original input image.
+    - posenet_model (model): The PoseNet model used for keypoint detection.
 
     Returns:
-    - dynamic_obstacles (list of tuples): List of obstacles with their positions and movements.
+    - keypoints_scaled (dict): Scaled keypoints with the structure:
+      {
+        'nose': (x, y), 'left_eye': (x, y), 'right_eye': (x, y), 'left_ear': (x, y),
+        'right_ear': (x, y), 'left_shoulder': (x, y), 'right_shoulder': (x, y),
+        'left_hip': (x, y), 'right_hip': (x, y)
+      }
     """
-    
-    for _ in range(num_obstacles):
-        # Randomly choose an entry side: 0=left, 1=right, 2=top, 3=bottom
-        side = np.random.choice([0, 1, 2, 3])
-        if side == 0:  # Left edge
-            initial_x = -650  # Just outside the grid
-            initial_y = np.random.uniform(0, grid_size[1])  # Random y position
-            direction = np.random.uniform(-np.pi / 4, np.pi / 4)  # Moving right
-        elif side == 1:  # Right edge
-            initial_x = 650  # Just outside the grid
-            initial_y = np.random.uniform(0, grid_size[1])  # Random y position
-            direction = np.random.uniform(3 * np.pi / 4, 5 * np.pi / 4)  # Moving left
-        elif side == 2:  # Top edge
-            initial_x = np.random.uniform(-640, 640)  # Random x position
-            initial_y = 1050  # Just outside the grid
-            direction = np.random.uniform(-3 * np.pi / 4, -np.pi / 4)  # Moving down
-        else:  # Bottom edge
-            initial_x = np.random.uniform(-640, 640)  # Random x position
-            initial_y = -50  # Just outside the grid
-            direction = np.random.uniform(np.pi / 4, 3 * np.pi / 4)  # Moving up
-        
-        speed = entry_speed
-        initial_coordinates = np.array([int(initial_x), int(initial_y)])
-        future_coordinates = np.zeros((time_steps, 2), dtype=int)
-        
-        # Add a random delay before the obstacle starts moving
-        delay = np.random.randint(0, max_delay)
-        
-        # for t in range(time_steps):
-        #    if t < delay:
-        #        # Before the delay, the obstacle stays outside the grid
-        #        future_coordinates[t] = [initial_x, initial_y]
-        #    else:
-        #        # After the delay, the obstacle starts moving into the grid
-        #        futur_x = int(initial_coordinates[0] + np.cos(direction) * speed * (t - delay) * dt)
-        #        futur_y = int(initial_coordinates[1] + np.sin(direction) * speed * (t - delay) * dt)
-        #        future_coordinates[t] = [futur_x, futur_y]
-        
-        dynamic_obstacles = (future_coordinates, direction, speed)
-    
-    return dynamic_obstacles
+    # Preprocess the image
+    height, width, _ = image.shape
+    #print(f"Original image size: {width}x{height}")
 
+    input_image, scale, pad_h, pad_w = resize_with_padding(image, 192)
+    input_image = tf.cast(input_image, dtype=tf.int32)[tf.newaxis, ...]
+
+    # Get PoseNet keypoints
+    results = posenet_model(input_image)
+    keypoints_with_scores = results['output_0'].numpy()
+
+    # Extract keypoints
+    keypoints = keypoints_with_scores[0, 0, :, :2]
+    scores = keypoints_with_scores[0, 0, :, 2]
+
+    # Reverse scaling and padding
+    keypoints[:, 0] = (keypoints[:, 0] * 192 - pad_h) / scale
+    keypoints[:, 1] = (keypoints[:, 1] * 192 - pad_w) / scale
+
+    # Initialize dictionary to hold scaled keypoints
+    keypoints_scaled = {}
+
+    for name, idx in keypoint_indices.items():
+        if name in ['nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 'left_shoulder', 'right_shoulder', 'left_hip', 'right_hip']:
+            x_scaled = keypoints[idx][1] / width  # Adjust for original image width
+            y_scaled = keypoints[idx][0] / height  # Adjust for original image height
+            keypoints_scaled[name] = (x_scaled, y_scaled)
+            #print(f"{name}: Scaled to original image -> ({x_scaled}, {y_scaled})")
+
+    return keypoints_scaled
+
+def calculate_average_angle(keypoints_scaled):
+    """
+    Calculate the average angle between specified keypoints.
+
+    Args:
+    - keypoints_scaled (dict): Scaled keypoints with their coordinates.
+
+    Returns:
+    - float: The average angle.
+    """
+    angles = []
+    
+    def angle_between(p1, p2):
+        return np.arctan2(p2[1] - p1[1], p2[0] - p1[0])
+
+    if 'left_shoulder' in keypoints_scaled and 'right_shoulder' in keypoints_scaled:
+        angles.append(angle_between(keypoints_scaled['left_shoulder'], keypoints_scaled['right_shoulder']))
+    
+    if 'left_hip' in keypoints_scaled and 'right_hip' in keypoints_scaled:
+        angles.append(angle_between(keypoints_scaled['left_hip'], keypoints_scaled['right_hip']))
+    
+    if 'left_eye' in keypoints_scaled and 'right_eye' in keypoints_scaled:
+        angles.append(angle_between(keypoints_scaled['left_eye'], keypoints_scaled['right_eye']))
+    
+    if 'left_ear' in keypoints_scaled and 'right_ear' in keypoints_scaled:
+        angles.append(angle_between(keypoints_scaled['left_ear'], keypoints_scaled['right_ear']))
+
+    if angles:
+        average_angle = np.mean(angles)
+        #print("Calculated Angles:", angles)
+        #print("Average Angle:", average_angle)
+        return average_angle
+    else:
+        #print("No angles calculated.")
+        return None
+
+import numpy as np
+
+def prepare_feature_vector(image, box_coords, posenet_model, depth_value):
+    """
+    Prepare the feature vector for a person detected in an image, ready for model prediction.
+
+    Args:
+    - image (numpy array): The original image containing the detected person.
+    - box_coords (tuple): The bounding box coordinates of the detected person (x1, y1, x2, y2).
+    - posenet_model: The pre-trained PoseNet model for keypoint extraction.
+    - depth_value (float): The depth value estimated for the person detected.
+
+    Returns:
+    - feature_vector (numpy array): The feature vector ready to be input into the model.
+    """
+    x1, y1, x2, y2 = box_coords
+
+    # Crop the image to the bounding box
+    cropped_image = image[y1:y2, x1:x2]
+
+    # Resize the cropped image to the input size expected by PoseNet
+    resized_image = resize_to_x_by_x(cropped_image, (192, 192))
+    
+    # Extract and scale keypoints from the resized cropped image
+    keypoints_scaled = extract_and_scale_keypoints(resized_image, posenet_model)
+
+    # Replace missing keypoints with -1
+    keypoints_scaled = {k: (round(v[0], 2), round(v[1], 2)) if v != (-1, -1) else (-1, -1) for k, v in keypoints_scaled.items()}
+
+    # Extract the values from the dictionary to form a list
+    keypoints_list = list(keypoints_scaled.values())
+
+    # Flatten the list of tuples to a single list of coordinates
+    keypoints_flat = [coord for point in keypoints_list for coord in (point if point != (-1, -1) else [-1, -1])]
+
+    # Replace any NaN values with -1
+    keypoints_flat = [-1 if np.isnan(coord) else coord for coord in keypoints_flat]
+
+    # Calculate the average angle
+    average_angle = calculate_average_angle(keypoints_scaled)
+    if average_angle is not None:
+        average_angle = round(average_angle, 2)
+    else:
+        average_angle = -1
+
+    # Use the depth value provided
+    distance = depth_value
+
+    # Create the feature vector and ensure it's a flat array
+    feature_vector = keypoints_flat + [average_angle, distance]
+
+    # Convert to a numpy array for model input
+    feature_vector = np.array(feature_vector, dtype=np.float64).reshape(1, -1)
+
+    return feature_vector

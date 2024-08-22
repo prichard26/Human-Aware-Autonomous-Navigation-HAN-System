@@ -1,4 +1,5 @@
 import torch
+import joblib
 import tensorflow_hub as hub
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 
@@ -26,3 +27,12 @@ def load_depth_estimation_model():
     model = AutoModelForDepthEstimation.from_pretrained("LiheYoung/depth-anything-small-hf")
     print("Depth estimation model loaded successfully.")
     return processor, model
+
+def load_orientation_model():
+    orientation_model = joblib.load("/Users/paulrichard/Documents/HAAN/model/orientation_model.pkl")
+    return orientation_model
+
+def load_depth_curve_spec():
+    best_model = "Polynomial"
+    prediction_param = (0.00029224, -0.10041, 8.3828)
+    return best_model, prediction_param

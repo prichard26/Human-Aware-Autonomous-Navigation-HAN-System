@@ -19,8 +19,6 @@ keypoint_indices = {
     'left_knee': 13, 'right_knee': 14, 'left_ankle': 15, 'right_ankle': 16
 }
 
-import numpy as np
-
 def calculate_keypoint_direction(keypoint_coords):
     """
     Calculates the direction based on keypoint coordinates.
@@ -83,6 +81,7 @@ def calculate_keypoint_direction(keypoint_coords):
 
 def calculate_direction(frame, box_coords, depth_values, posenet_model, DISP=True):
     """
+    NOT USED ANYMORE BCS WE HAVE OUR OWN SVM MODEL
     Calculates the direction and speed of detected persons.
 
     Args:
