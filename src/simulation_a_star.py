@@ -191,6 +191,7 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
                 path.append(current)
                 current = came_from[current]
             path.append(start_grid)
+            print(f'Goal reached in {iterations} iterations !')
             return path[::-1]
         
         close_set.add(current)
