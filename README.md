@@ -32,10 +32,10 @@ To get started with this project, follow these steps:
 
    ```bash
    conda env create -f environment.yml
-   conda activate cv_project
+   conda activate infosys
    ```
 
-   This will create a new Conda environment named `cv_project` with all the necessary dependencies installed.
+   This will create a new Conda environment named `infosys` with all the necessary dependencies installed.
 
 2. **Configure Your IDE** (e.g., VS Code):
 
@@ -43,10 +43,10 @@ To get started with this project, follow these steps:
 
    - Open the Command Palette with `Ctrl + Shift + P` (or `Cmd + Shift + P` on Mac).
    - Type **"Python: Select Interpreter"** and select it.
-   - Choose the interpreter for your `cv_project` environment, which should be labeled as:
+   - Choose the interpreter for your `infosys` environment, which should be labeled as:
 
      ```
-     Python 3.8.x ('cv_project': conda)
+     Python 3.8.x ('infosys': conda)
      ```
 
    This step ensures that your IDE is using the correct environment and that all installed packages are recognized.
@@ -54,6 +54,8 @@ To get started with this project, follow these steps:
 3. **Configure the Project**:
 
    Ensure that all paths in `config.py` are correctly set to match your environment, especially if you're using custom data paths or models.
+
+   Ensure that any part that starts with # CHANGE is modified to the correct paths of your interest.
 
 4. **Run the Project**:
 

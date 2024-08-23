@@ -29,6 +29,7 @@ def load_depth_estimation_model():
     return processor, model
 
 def load_orientation_model():
+    # CHANGE the path depending on which angles of orientation you would like to train
     orientation_model = joblib.load("/Users/paulrichard/Documents/HAAN/model/orientation_model.pkl")
     return orientation_model
 
