@@ -16,7 +16,12 @@ __pycache__/
 *.log
 
 # Ignore the data directory
-data/
+data/output
+data/input/high_size
+data/input/medium_size
+data/input/normal_size
+data/input/low_size
+data/input/reduced_size
 
 animation.mp4
 animation2.mp4

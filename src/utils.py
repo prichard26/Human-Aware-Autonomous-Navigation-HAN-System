@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(name)s - %(leve
 
 #----------------BOXES----------------#
 
-def draw_boxes(image_path, coords):
+def draw_boxes_path(image_path, coords):
     """
     Draws bounding boxes around detected persons in the image.
     
@@ -43,6 +43,33 @@ def draw_boxes(image_path, coords):
     except Exception as e:
         logging.error(f"An error occurred in draw_boxes with file {image_path}: {e}")
 
+def draw_boxes(image, coords):
+    """
+    Draws bounding boxes around detected persons in the image.
+
+    Args:
+    - image (numpy array): The input image.
+    - coords (list of tuples): List of coordinates for the bounding boxes.
+
+    Returns:
+    - image_rgb (numpy array): Image with bounding boxes drawn.
+    """
+    try:
+        if isinstance(image, str):
+            image = cv2.imread(image)
+            if image is None:
+                raise FileNotFoundError(f"Image not found at {image}")
+        for idx, (x1, y1, x2, y2) in enumerate(coords):
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(image, f'{idx+1}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 0, 255), 10)
+            x_center, y_center = int((x1 + x2) / 2), int((y1 + y2) / 2)
+            cv2.circle(image, (x_center, y_center), 5, (0, 0, 255), -1)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        return image_rgb
+    except Exception as e:
+        logging.error(f"An error occurred in draw_boxes: {e}")
+        return None
+    
 def preprocess_boxes(depth_image, coords):
     """
     Preprocesses the depth image by applying a mask to exclude background.
@@ -525,3 +552,27 @@ def prepare_feature_vector(image, box_coords, posenet_model, depth_value):
     feature_vector = np.array(feature_vector, dtype=np.float64).reshape(1, -1)
 
     return feature_vector
+
+
+def draw_keypoints(image, keypoints_scaled):
+    """
+    Draw keypoints on the image.
+
+    Args:
+    - image (numpy array): The input image.
+    - keypoints_scaled (dict): Scaled keypoints with their coordinates.
+
+    Returns:
+    - image_rgb (numpy array): Image with keypoints drawn.
+    """
+    try:
+        for name, (x, y) in keypoints_scaled.items():
+            x = int(x * image.shape[1])  # Scale x to the image width
+            y = int(y * image.shape[0])  # Scale y to the image height
+            cv2.circle(image, (x, y), 5, (255, 0, 0), -1)  # Draw keypoint
+            cv2.putText(image, name, (x + 10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        return image_rgb
+    except Exception as e:
+        logging.error(f"An error occurred in draw_keypoints: {e}")
+        return None
