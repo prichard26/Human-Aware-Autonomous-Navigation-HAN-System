@@ -26,18 +26,31 @@ This project implements a sophisticated computer vision-based system designed fo
 
 To get started with this project, follow these steps:
 
-IF YOU HAVE CONDA:
+
 
 1. **Create a Conda environment and install dependencies**:
 
    Open your terminal and execute the following commands:
 
+   **IF YOU HAVE CONDA:**
+   
    ```bash
    conda env create -f environment.yml
    conda activate infosys
    ```
 
    This will create a new Conda environment named `infosys` with all the necessary dependencies installed.
+   
+
+   **IF YOU DO NOT HAVE CONDA:**
+   
+   ```bash
+   python -m venv <name_of_venv>
+   .\<name_of_venv>\Scripts\activate
+   pip install <name_of_library>
+   ```
+
+   Manually pip install all the dependecies in the environment.yaml file
 
 2. **Configure Your IDE** (e.g., VS Code):
 
@@ -67,18 +80,5 @@ IF YOU HAVE CONDA:
    python main.py
    ```
 
-IF YOU DO NOT HAVE CONDA:
-
-1. **Create a virtual environment**
-
-   Run this command after cloning the repo: `python -m venv <name_of_venv>`
-
-2. **Activate the venv**
-
-   Run this command: `.\<name_of_venv>\Scripts\activate`
-   
-3. **Manually pip install all the dependencies in the `environment.yaml` file**
-
-   This looks something like this: `pip install <name_of_library>`
 
 This will initiate the system, integrating human detection, depth estimation, and navigation algorithms to operate effectively in a dynamic environment.
