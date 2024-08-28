@@ -74,6 +74,27 @@ The project has the following structure:
 ├── README.md                        # Project documentation
 └── environment.yml                  # Conda environment configuration file
 ```
+├── data/                            # Directory containing data files
+├── images/                          # Directory containing images used in the project
+├── model/                           # Directory containing model files
+│   └── orientation_model.pkl        # Pre-trained orientation model
+├── src/                             # Source code directory
+│   ├── __init__.py                  # Init file for the src package
+│   ├── calibration.py               # Calibration module for the camera system
+│   ├── depth_estimation.py          # Module for depth estimation from images
+│   ├── direction_speed.py           # Module for direction and speed estimation of detected persons
+│   ├── draw_boxes.py                # Utility to draw bounding boxes around detected persons
+│   ├── model_initialization.py      # Module to initialize and load the ML models
+│   ├── simulation_a_star.py         # A* algorithm for path planning
+│   ├── simulation_a_star_futur.py   # Extended A* algorithm for future enhancements
+│   └── utils.py                     # Utility functions used across the project
+├── testing/                         # Directory for testing files and scripts
+├── main.ipynb                       # Main Jupyter notebook for running the system
+├── CV_PROJECT.ipynb                 # Additional Jupyter notebook for computer vision tasks
+├── LICENSE                          # License file
+├── README.md                        # Project documentation
+└── environment.yml                  # Conda environment configuration file
+```
 ## Pipeline
 
 The HAAN System follows a well-structured pipeline:
