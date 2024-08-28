@@ -114,12 +114,30 @@ The HAAN System follows a well-structured pipeline:
      
 ## Example Results
 
-**Image 1**: Person Detection with Bounding Boxes
+- **Image 1**: Initial Image
+  
+  ![Initial Image](images/README/initial.jpeg)
 
-**Image 2**: Depth Estimation Results
+- **Image 2**: Person Detection with Bounding Boxes
+  
+  ![Person Detection](images/README/box.png)
 
-**GIF**: Robot Navigation through Dynamic Environment using simple A*
+- **Image 3**: Depth Estimation Results
+  
+  ![Depth Estimation](images/README/depth.png)
 
+- **Image 4**: Direction and Speed Estimation
+  
+  ![Direction and Speed Estimation](images/README/direction.jpeg)
+
+- **Image 5**: Cost Map for Path Planning
+  
+  ![Cost Map](images/README/ed06b6d1-7ae5-477e-8062-4fe6a9806d5d.png)
+
+- **GIF**: Robot Navigation through Dynamic Environment
+  
+  ![Robot Navigation](images/README/final.gif)
+  
 ## Requirements
 
 - Python 3.8+
