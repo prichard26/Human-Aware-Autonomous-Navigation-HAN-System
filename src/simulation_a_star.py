@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from tqdm import tqdm
 import heapq
 
-SCALE = 0.1
+SCALE = 0.3
 
 
 def x_to_grid(x):

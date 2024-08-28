@@ -1,84 +1,126 @@
+# Human-Aware Autonomous Navigation (HAAN) System
 
-# CV_PROJECT
+## Overview
 
-This project implements a sophisticated computer vision-based system designed for human detection, depth estimation, direction and speed calculation, and autonomous navigation within dynamic environments. The system integrates cutting-edge machine learning models and computer vision techniques to enable human-aware path planning and navigation.
+The Human-Aware Autonomous Navigation (HAAN) System is a sophisticated framework designed to enable a robot to navigate safely and efficiently in dynamic environments populated by humans. The system uses a combination of computer vision, depth estimation, and probabilistic A* path planning to predict human movements and avoid collisions.
 
-## Project Structure
+## Key Features
 
-- **`data/`**: Directory for input and output data files.
-- **`models/`**: Directory containing pre-trained models used for various detection and estimation tasks.
-- **`notebooks/`**: Contains Jupyter notebooks for experimentation, prototyping, and visualizing results.
-- **`src/`**: Source code directory, organized into key modules:
-  - `calibration.py`: Functions for camera and sensor calibration to ensure accurate depth and spatial measurements.
-  - `draw_boxes.py`: Utilities for drawing bounding boxes around detected objects, primarily humans.
-  - `depth_estimation.py`: Methods and algorithms for estimating depth from camera images, crucial for understanding the 3D environment.
-  - `cost_map.py`: Functions to generate cost maps, used in path planning to navigate efficiently and avoid obstacles.
-  - `direction_speed.py`: Functions to calculate the direction and speed of detected humans, aiding in dynamic path planning.
-  - `navigation_algo.py`: Core navigation algorithm that integrates detection, estimation, and planning to guide the robot.
-  - `utils.py`: General utility functions used across different modules, including image preprocessing and mathematical operations.
-  - `__init__.py`: Initializes the `src` package, allowing its modules to be imported elsewhere in the project.
-  
-- `config.py`: Configuration file containing various settings and parameters used throughout the project.
-- `environment.yml`: Conda environment specification file, listing all dependencies required to run the project.
-- `main.py`: The main entry point for running the project, orchestrating the various modules for a cohesive system execution.
+- **Real-time Path Planning**: Uses probabilistic A* algorithm for efficient and safe path planning in dynamic environments.
+- **Human Detection and Tracking**: Utilizes YOLO for person detection and PoseNet for keypoint detection to predict human movements.
+- **Depth Estimation**: Integrates depth estimation techniques to measure the distance of humans from the robot.
+- **Direction and Speed Estimation**: Estimates the direction and speed of detected humans to predict their future positions.
+- **Simulation Environment**: Includes a simulation module for testing and visualizing the robot's navigation in a dynamic environment.
 
-## Setup
+## Installation
 
-To get started with this project, follow these steps:
+To set up the HAAN system, follow these steps:
 
+1. **Clone the repository**:
 
+    ```bash
+    git clone https://github.com/prichard26/Human-Aware-Autonomous-Navigation-HAN-System.git
+    ```
 
-1. **Create a Conda environment and install dependencies**:
+2. **Navigate to the project directory**:
 
-   Open your terminal and execute the following commands:
+    ```bash
+    cd Human-Aware-Autonomous-Navigation-HAN-System
+    ```
 
-   **IF YOU HAVE CONDA:**
+3. **Install the required dependencies**:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## Directory Structure
+
+The project has the following structure:
+
+```plaintext
+.
+├── data/                        # Directory containing data files
+├── images/                      # Directory containing images used in the project
+├── model/                       # Directory containing model files
+│   └── orientation_model.pkl    # Pre-trained orientation model
+├── src/                         # Source code directory
+│   ├── __init__.py              # Init file for the src package
+│   ├── calibration.py           # Calibration module for the camera system
+│   ├── depth_estimation.py      # Module for depth estimation from images
+│   ├── direction_speed.py       # Module for direction and speed estimation of detected persons
+│   ├── draw_boxes.py            # Utility to draw bounding boxes around detected persons
+│   ├── model_initialization.py  # Module to initialize and load the ML models
+│   ├── simulation_a_star.py     # A* algorithm for path planning
+│   ├── simulation_a_star_futur.py # Extended A* algorithm for future enhancements
+│   └── utils.py                 # Utility functions used across the project
+├── testing/                     # Directory for testing files and scripts
+├── main.ipynb                   # Main Jupyter notebook for running the system
+├── CV_PROJECT.ipynb             # Additional Jupyter notebook for computer vision tasks
+├── LICENSE                      # License file
+├── README.md                    # Project documentation
+└── environment.yml              # Conda environment configuration file
+
+## Pipeline
+
+The HAAN System follows a well-structured pipeline:
+
+### 1. **Person Detection**
+   - **Module**: `model_initialization.py`, `draw_boxes.py`
+   - **Description**: Detects humans in the camera feed using YOLO and marks them with bounding boxes.
+
+### 2. **Depth Estimation**
+   - **Module**: `depth_estimation.py`
+   - **Description**: Estimates the depth (distance) of each detected person from the robot using a pre-trained depth model.
+
+### 3. **Direction and Speed Estimation**
+   - **Module**: `direction_speed.py`
+   - **Description**: Estimates the direction and speed of each detected person by analyzing their movement and orientation.
+
+### 4. **Path Planning**
+   - **Module**: `simulation_a_star.py`
+   - **Description**: Computes the safest and most efficient path for the robot to navigate through the dynamic environment using a probabilistic A* algorithm.
+
+### 5. **Simulation and Visualization**
+   - **Module**: `main.ipynb`
+   - **Description**: Simulates the robot's movement, displays the dynamic obstacles, and visualizes the planned path.
+
+## How to Run
+
+1. **Calibration**: 
+   - Run `calibration.py` to calibrate your camera system.
    
-   ```bash
-   conda env create -f environment.yml
-   conda activate infosys
-   ```
+2. **Person Detection and Depth Estimation**: 
+   - Use the notebook `main.ipynb` to detect persons, estimate their depth, and visualize the bounding boxes.
 
-   This will create a new Conda environment named `infosys` with all the necessary dependencies installed.
-   
+3. **Direction and Speed Estimation**: 
+   - The module `direction_speed.py` can be run to estimate the movement patterns of the detected persons.
 
-   **IF YOU DO NOT HAVE CONDA:**
-   
-   ```bash
-   python -m venv <name_of_venv>
-   .\<name_of_venv>\Scripts\activate
-   pip install <name_of_library>
-   ```
+4. **Path Planning and Simulation**: 
+   - The `simulation_a_star.py` script runs the probabilistic A* algorithm and simulates the robot's movement.
 
-   Manually pip install all the dependecies in the environment.yaml file
+5. **Visualization**: 
+   - Use the functions in `utils.py` and `main.ipynb` to visualize the robot's navigation, obstacles, and paths.
 
-2. **Configure Your IDE** (e.g., VS Code):
+## Example Results
 
-   Ensure that your IDE is using the correct Python interpreter:
+**Image 1**: Person Detection with Bounding Boxes
 
-   - Open the Command Palette with `Ctrl + Shift + P` (or `Cmd + Shift + P` on Mac).
-   - Type **"Python: Select Interpreter"** and select it.
-   - Choose the interpreter for your `infosys` environment, which should be labeled as:
+**Image 2**: Depth Estimation Results
 
-     ```
-     Python 3.8.x ('infosys': conda)
-     ```
+**GIF**: Robot Navigation through Dynamic Environment
 
-   This step ensures that your IDE is using the correct environment and that all installed packages are recognized.
+## Requirements
 
-3. **Configure the Project**:
+- Python 3.8+
+- OpenCV
+- TensorFlow
+- Matplotlib
+- NumPy
+- SciPy
 
-   Ensure that all paths in `config.py` are correctly set to match your environment, especially if you're using custom data paths or models.
+## Future Work
 
-   Ensure that any part that starts with # CHANGE is modified to the correct paths of your interest.
-
-4. **Run the Project**:
-
-   Once everything is set up, you can start the project by running:
-
-   ```bash
-   python main.py
-   ```
-
-
-This will initiate the system, integrating human detection, depth estimation, and navigation algorithms to operate effectively in a dynamic environment.
+- Implement more advanced human motion prediction models.
+- Integrate additional sensors for improved environment perception.
+- Expand the system for outdoor navigation in more complex environments.
