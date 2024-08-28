@@ -1,5 +1,7 @@
 # Human-Aware Autonomous Navigation (HAAN) System
 
+![Robot Navigation](images/README/final.gif)
+
 ## Overview
 
 The Human-Aware Autonomous Navigation (HAAN) System is a sophisticated framework designed to enable a robot to navigate safely and efficiently in dynamic environments populated by humans. The system uses a combination of computer vision, depth estimation, and probabilistic A* path planning to predict human movements and avoid collisions.
@@ -74,27 +76,7 @@ The project has the following structure:
 ├── README.md                        # Project documentation
 └── environment.yml                  # Conda environment configuration file
 ```
-├── data/                            # Directory containing data files
-├── images/                          # Directory containing images used in the project
-├── model/                           # Directory containing model files
-│   └── orientation_model.pkl        # Pre-trained orientation model
-├── src/                             # Source code directory
-│   ├── __init__.py                  # Init file for the src package
-│   ├── calibration.py               # Calibration module for the camera system
-│   ├── depth_estimation.py          # Module for depth estimation from images
-│   ├── direction_speed.py           # Module for direction and speed estimation of detected persons
-│   ├── draw_boxes.py                # Utility to draw bounding boxes around detected persons
-│   ├── model_initialization.py      # Module to initialize and load the ML models
-│   ├── simulation_a_star.py         # A* algorithm for path planning
-│   ├── simulation_a_star_futur.py   # Extended A* algorithm for future enhancements
-│   └── utils.py                     # Utility functions used across the project
-├── testing/                         # Directory for testing files and scripts
-├── main.ipynb                       # Main Jupyter notebook for running the system
-├── CV_PROJECT.ipynb                 # Additional Jupyter notebook for computer vision tasks
-├── LICENSE                          # License file
-├── README.md                        # Project documentation
-└── environment.yml                  # Conda environment configuration file
-```
+
 ## Pipeline
 
 The HAAN System follows a well-structured pipeline:
@@ -133,32 +115,6 @@ The HAAN System follows a well-structured pipeline:
 4. **Visualization**: 
    - The visualization is also handled within `main.ipynb`, which calls the necessary functions from `utils.py` and other modules to display the robot's navigation, obstacles, and paths.
      
-## Example Results
-
-- **Image 1**: Initial Image
-  
-  ![Initial Image](images/README/initial.jpeg)
-
-- **Image 2**: Person Detection with Bounding Boxes
-  
-  ![Person Detection](images/README/box.png)
-
-- **Image 3**: Depth Estimation Results
-  
-  ![Depth Estimation](images/README/depth.png)
-
-- **Image 4**: Direction and Speed Estimation
-  
-  ![Direction and Speed Estimation](images/README/direction.jpeg)
-
-- **Image 5**: Cost Map for Path Planning
-  
-  ![Cost Map](images/README/ed06b6d1-7ae5-477e-8062-4fe6a9806d5d.png)
-
-- **GIF**: Robot Navigation through Dynamic Environment
-  
-  ![Robot Navigation](images/README/final.gif)
-  
 ## Requirements
 
 - Python 3.8+
