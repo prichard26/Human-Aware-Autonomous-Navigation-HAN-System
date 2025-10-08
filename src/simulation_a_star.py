@@ -8,13 +8,16 @@ SCALE = 0.3
 
 
 def x_to_grid(x):
-    return int(x + int(640*SCALE))  # Convert x from [-640, 640] to [0, 1280]
+    """Convert x coordinate from world space to grid space."""
+    return int(x + int(640*SCALE))  # Convert x from [-640*SCALE, 640*SCALE] to [0, 1280*SCALE]
 
 def grid_to_x(grid):
-    return int(grid - int(640*SCALE))  # Convert x from [-640, 640] to [0, 1280]
+    """Convert x coordinate from grid space to world space."""
+    return int(grid - int(640*SCALE))  # Convert x from [0, 1280*SCALE] to [-640*SCALE, 640*SCALE]
 
 def y_to_grid(y):
-    return int(y)  # y already in [0, 1000]
+    """Convert y coordinate from world space to grid space."""
+    return int(y)  # y already in [0, 1000*SCALE]
 
 def heuristic(a, b, weight=1):
     """
@@ -163,9 +166,29 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
     Returns:
     - list: List of tuples representing the path from start to goal.
     """
-    # Convert start and goal to grid coordinates
+    # Input validation
+    if cost_map is None or cost_map.size == 0:
+        print("Error: Invalid cost map provided")
+        return None
+    
+    if start is None or goal is None:
+        print("Error: Invalid start or goal position")
+        return None
+    
+    # Convert start and goal to grid coordinates first
     start_grid = (x_to_grid(start[0]), y_to_grid(start[1]))
     goal_grid = (x_to_grid(goal[0]), y_to_grid(goal[1]))
+    
+    # Check if start and goal are within bounds (using grid coordinates)
+    if (start_grid[0] < 0 or start_grid[0] >= cost_map.shape[0] or 
+        start_grid[1] < 0 or start_grid[1] >= cost_map.shape[1]):
+        print(f"Error: Start position {start} -> grid {start_grid} is out of bounds (grid size: {cost_map.shape})")
+        return None
+        
+    if (goal_grid[0] < 0 or goal_grid[0] >= cost_map.shape[0] or 
+        goal_grid[1] < 0 or goal_grid[1] >= cost_map.shape[1]):
+        print(f"Error: Goal position {goal} -> grid {goal_grid} is out of bounds (grid size: {cost_map.shape})")
+        return None
     prob_grid = cost_map
     neighbors = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
     close_set = set()
@@ -180,7 +203,17 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
     while open_heap:
         iterations += 1
         if iterations > max_iterations:
-            print("Reached maximum iterations, aborting...")
+            print(f"Warning: Reached maximum iterations ({max_iterations}), aborting...")
+            # Return partial path if available
+            if came_from:
+                path = []
+                current = min(came_from.keys(), key=lambda x: heuristic(x, goal_grid))
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(start_grid)
+                print(f"Returning partial path with {len(path)} waypoints")
+                return path[::-1]
             return None
         
         current = heapq.heappop(open_heap)[1]
@@ -191,6 +224,7 @@ def find_a_star_proba(cost_map, start, goal, max_iterations=1000000000):
                 path.append(current)
                 current = came_from[current]
             path.append(start_grid)
+            print(f"Path found with {len(path)} waypoints in {iterations} iterations")
             return path[::-1]
         
         close_set.add(current)
@@ -257,8 +291,23 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
         # Find the A* path
         path = find_a_star_proba(current_cost_map, robot_positions[-1], goal)
         if path is None:
-            print(f"No path found at time step {t}. Stopping simulation.")
-            break
+            print(f"No path found at time step {t}. Robot pos: {robot_positions[-1]}, Goal: {goal}")
+            print(f"Cost map shape: {current_cost_map.shape}")
+            print(f"Cost map bounds: x=[0, {current_cost_map.shape[0]}], y=[0, {current_cost_map.shape[1]}]")
+            # Try to continue with a simple straight-line path as fallback
+            robot_pos = robot_positions[-1]
+            goal_pos = goal
+            # Simple fallback: move towards goal
+            direction = np.array(goal_pos) - np.array(robot_pos)
+            if np.linalg.norm(direction) > 0:
+                direction = direction / np.linalg.norm(direction)
+                next_pos = tuple(np.array(robot_pos) + direction * 5)  # Move 5 units towards goal
+                path = [robot_pos, next_pos]
+                print(f"Using fallback path: {path}")
+            else:
+                print("Goal reached! Stopping simulation.")
+                goal_reached = True
+                break
         path_times.append(path)
 
         # Move the robot as far as possible in a single iteration
@@ -285,10 +334,13 @@ def simulation(dynamic_obstacles_pos, dynamic_obstalcles_dir_speed, start, goal,
         # Add the final position reached by the robot
         robot_positions.append(tuple(np.round(current_position).astype(int)))
         
-        # Check if the robot will pass the goal within this time step
-        if heuristic(current_position, goal) <= remaining_distance:
+        # Check if the robot has reached the goal
+        distance_to_goal = heuristic(current_position, goal)
+        if distance_to_goal <= 15:  # Within 15 units of goal
             current_position = goal
             goal_reached = True
+            print(f"🎯 Goal reached at time step {t}! Distance: {distance_to_goal:.2f}")
+            robot_positions.append(tuple(np.round(current_position).astype(int)))
             break
 
     return robot_positions, cost_map_times, dynamic_obstacles_times, path_times, dynamic_obstalcles_dir_speed_times

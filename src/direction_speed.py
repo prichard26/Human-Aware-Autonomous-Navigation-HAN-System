@@ -163,9 +163,48 @@ def calculate_direction(frame, box_coords, depth_values, posenet_model, DISP=Tru
         display_img(frame_rgb, title="Human Detection and Pose Estimation")
     return directions
 
-def calculate_speed(frame, box_coords):
-# do the logic with the previous frames 
+def calculate_speed(frame, box_coords, previous_positions=None):
+    """
+    Calculate the speed of detected persons based on their movement between frames.
+    
+    Args:
+    - frame (numpy array): Current frame
+    - box_coords (list of tuples): Current bounding box coordinates
+    - previous_positions (list of tuples, optional): Previous frame positions for speed calculation
+    
+    Returns:
+    - speeds (list of floats): Calculated speeds for each person
+    """
     speeds = []
-    for i in range (len(box_coords)):
-        speeds.append(1)
+    
+    if previous_positions is None or len(previous_positions) != len(box_coords):
+        # If no previous positions, return default speed
+        for i in range(len(box_coords)):
+            speeds.append(1.0)  # Default speed in m/s
+        return speeds
+    
+    for i, (current_box, prev_pos) in enumerate(zip(box_coords, previous_positions)):
+        try:
+            # Calculate center of current bounding box
+            x1, y1, x2, y2 = current_box
+            current_center = ((x1 + x2) / 2, (y1 + y2) / 2)
+            
+            # Calculate distance moved
+            distance = np.sqrt((current_center[0] - prev_pos[0])**2 + (current_center[1] - prev_pos[1])**2)
+            
+            # Convert pixels to meters (assuming 1 pixel = 0.001 meters)
+            distance_meters = distance * 0.001
+            
+            # Calculate speed (assuming 30 FPS)
+            speed = distance_meters * 30  # m/s
+            
+            # Cap the speed to reasonable limits
+            speed = max(0.1, min(speed, 5.0))  # Between 0.1 and 5.0 m/s
+            
+            speeds.append(speed)
+            
+        except Exception as e:
+            print(f"Error calculating speed for person {i}: {e}")
+            speeds.append(1.0)  # Default speed on error
+    
     return speeds

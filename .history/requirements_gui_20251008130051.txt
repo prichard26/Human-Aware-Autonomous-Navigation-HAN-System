@@ -1,0 +1,22 @@
+# Core dependencies
+numpy>=1.21.0
+opencv-python>=4.5.0
+matplotlib>=3.5.0
+scipy>=1.7.0
+pillow>=8.3.0
+
+# Machine Learning
+torch>=2.0.1
+torchvision>=0.15.2
+tensorflow>=2.8.0
+tensorflow-hub>=0.12.0
+transformers>=4.20.0
+joblib>=1.1.0
+
+# GUI dependencies
+tkinter  # Usually comes with Python
+psutil>=5.8.0  # For system monitoring
+
+# Optional dependencies for enhanced features
+tqdm>=4.64.0  # Progress bars
+gitpython>=3.1.0  # Git integration
