@@ -118,22 +118,22 @@ python enhanced_main.py
 Our user-friendly interface makes robot navigation accessible to everyone:
 
 ### **🎯 Simulation Controls**
-- **📸 Image Input**: Load custom images or use random obstacles
-- **⚙️ Parameter Tuning**: Adjust robot speed, simulation time, and goal position
-- **🎮 Real-time Control**: Start, stop, pause, and restart simulations
-- **🎬 Animation Controls**: Pause, resume, and reset animations
+- ** Image Input**: Load custom images or use random obstacles
+- ** Parameter Tuning**: Adjust robot speed, simulation time, and goal position
+- ** Real-time Control**: Start, stop, pause, and restart simulations
+- ** Animation Controls**: Pause, resume, and reset animations
 
 ### **📊 Live Visualization**
-- **🗺️ Real-time Path Planning**: Watch the robot find optimal paths
-- **👥 Dynamic Obstacles**: See how the robot avoids moving humans
-- **📈 Performance Metrics**: Monitor system performance in real-time
-- **🎯 Goal Tracking**: Visual feedback when the robot reaches its destination
+- ** Real-time Path Planning**: Watch the robot find optimal paths
+- ** Dynamic Obstacles**: See how the robot avoids moving humans
+- ** Performance Metrics**: Monitor system performance in real-time
+- ** Goal Tracking**: Visual feedback when the robot reaches its destination
 
 ### **📝 System Monitoring**
-- **📊 Status Indicators**: Real-time system status and progress
-- **📝 Detailed Logging**: Comprehensive system logs and debug information
-- **🔍 Error Handling**: Clear error messages and troubleshooting tips
-- **⚡ Performance Analytics**: CPU usage, memory, and processing speed
+- ** Status Indicators**: Real-time system status and progress
+- ** Detailed Logging**: Comprehensive system logs and debug information
+- ** Error Handling**: Clear error messages and troubleshooting tips
+- ** Performance Analytics**: CPU usage, memory, and processing speed
 
 ## 🏗️ System Architecture
 
@@ -201,16 +201,7 @@ Our system is built with modularity in mind:
 
 ![Performance Data](images/Curve_Data_Big1_1024.png)
 
-*System performance across different scenarios*
-
-</div>
-
-- **Detection Accuracy**: 95%+ human detection rate
-- **Processing Speed**: Real-time performance (30+ FPS)
-- **Navigation Efficiency**: 40% faster than traditional methods
-- **Safety Record**: Zero collision incidents in testing
-
-## 🚀 What's Next?
+##  What's Next?
 
 ### **Version 2.0 Roadmap**
 - **Multi-robot Coordination**: Multiple robots working together
@@ -218,55 +209,9 @@ Our system is built with modularity in mind:
 - **Cloud Integration**: Remote monitoring and control
 - **Mobile App**: Control your robot from anywhere
 
-### **Research Opportunities**
-- **Human-Robot Interaction**: Understanding social navigation
-- **Predictive Analytics**: Advanced movement prediction
-- **Edge Computing**: On-device processing optimization
-
-## 🤝 Contributing
-
-We believe in the power of community! Here's how you can help:
-
-1. **🐛 Report Bugs**: Found an issue? Let us know!
-2. **💡 Suggest Features**: Have ideas? We'd love to hear them!
-3. **🔧 Submit Code**: Want to contribute? We welcome pull requests!
-4. **📖 Improve Documentation**: Help others understand the system better
-
-## 📚 Resources & Learning
-
-### **For Beginners**
-- [Getting Started Guide](docs/getting-started.md)
-- [Video Tutorials](https://youtube.com/playlist?list=...)
-- [Sample Projects](examples/)
-
-### **For Developers**
-- [API Documentation](docs/api.md)
-- [Advanced Configuration](docs/advanced.md)
-- [Performance Optimization](docs/performance.md)
-
-### **For Researchers**
-- [Technical Papers](docs/papers.md)
-- [Dataset Information](docs/datasets.md)
-- [Benchmarking Results](docs/benchmarks.md)
-
-## 🏆 Recognition & Awards
-
-- **🥇 Best Innovation Award** - Robotics Conference 2024
-- **🌟 Open Source Excellence** - GitHub Community Choice
-- **🔬 Research Impact** - Cited in 50+ academic papers
-
-## 📞 Support & Community
-
-- **💬 Discord**: Join our community [here](https://discord.gg/haan)
-- **📧 Email**: support@haan-system.com
-- **🐦 Twitter**: Follow us [@HAANSystem](https://twitter.com/HAANSystem)
-- **📖 Documentation**: [docs.haan-system.com](https://docs.haan-system.com)
-
-## 📄 License
-
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 Special thanks to our amazing team and the open-source community:
 - **Nahas, Yathisha, Victor, Shivakumar, and Ravi** - For their incredible guidance and support
@@ -274,14 +219,4 @@ Special thanks to our amazing team and the open-source community:
 - **Research Community** - For advancing the field of human-aware robotics
 
 ---
-
-<div align="center">
-
-**🌟 Star this repository if you find it helpful! 🌟**
-
-[![GitHub stars](https://img.shields.io/github/stars/prichard26/Human-Aware-Autonomous-Navigation-HAN-System?style=social)](https://github.com/prichard26/Human-Aware-Autonomous-Navigation-HAN-System)
-[![GitHub forks](https://img.shields.io/github/forks/prichard26/Human-Aware-Autonomous-Navigation-HAN-System?style=social)](https://github.com/prichard26/Human-Aware-Autonomous-Navigation-HAN-System)
-
-**Made with ❤️ for the future of robotics**
-
 </div>
